@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from flask import Flask, request, jsonify, send_file
+from urllib.parse import quote
 import asyncio
 import io
 
@@ -33,12 +34,12 @@ COOKIES = {
     '__cf_bm': '28MnnefdTV23iLTtJaYJdxU6magLYb4zpDGyMKHrHvw-1721964119-1.0.1.1-upkx6n8USULq_B4mAxmjY2Y1fh40DkcftOZXoRwQTHh0Th4MtCGN0Jin02G7ALcqrnx3huEnpGbujKoW9ETsBw',
 }
 
-async def get_conversation_id():
+def get_conversation_id():
     response = requests.post(CONVERSATIONS_URL, headers=HEADERS, cookies=COOKIES, json={})
     data = response.json()
     return data.get('sid')
 
-async def send_message(conversation_id, message):
+def send_message(conversation_id, message):
     chat_data = json.dumps({"text": message, "conversation": conversation_id})
     response = requests.post(CHAT_URL, headers=HEADERS, cookies=COOKIES, data=chat_data)
     
@@ -59,13 +60,13 @@ async def send_message(conversation_id, message):
 
     return full_response.strip(), received_sid
 
-async def get_voice(message_sid, voice_id):
+def get_voice(message_sid, voice_id):
     voice_url = f"{VOICE_URL}?mode=eager&voice=voice{voice_id}&messageSid={message_sid}"
     response = requests.get(voice_url, headers=HEADERS, cookies=COOKIES)
     return response.content
 
 @app.route('/api/tts', methods=['POST'])
-async def tts():
+def tts():
     data = request.json
     text = data.get('text')
     voice = data.get('voice')
@@ -77,17 +78,17 @@ async def tts():
         return jsonify({"error": "Voice must be between 1 and 8"}), 400
 
     try:
-        conversation_id = await get_conversation_id()
-        response, received_sid = await send_message(conversation_id, text)
+        conversation_id = get_conversation_id()
+        response, received_sid = send_message(conversation_id, text)
         
         if not received_sid:
             return jsonify({"error": "Failed to get message SID"}), 500
 
-        voice_data = await get_voice(received_sid, voice)
+        voice_data = get_voice(received_sid, voice)
         
         return send_file(
             io.BytesIO(voice_data),
-            mimetype='audio/mpeg',
+            mimetype='audio/mp3',
             as_attachment=True,
             download_name='tts_output.mp3'
         )
