@@ -1,70 +1,62 @@
-import subprocess
 import json
 import time
 import io
 from flask import Flask, request, jsonify, send_file
+import requests
 
 app = Flask(__name__)
 
-CONVERSATIONS_CURL = '''
-curl -X POST 'https://pi.ai/api/conversations' -H 'User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36' -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'authority: pi.ai' -H 'accept-language: en-PH,en-US;q=0.9,en;q=0.8' -H 'origin: https://pi.ai' -H 'referer: https://pi.ai/talk' -H 'sec-ch-ua: "Not-A.Brand";v="99", "Chromium";v="124"' -H 'sec-ch-ua-mobile: ?1' -H 'sec-ch-ua-platform: "Android"' -H 'sec-fetch-dest: empty' -H 'sec-fetch-mode: cors' -H 'sec-fetch-site: same-origin' -H 'Cookie: __Host-session=r98ovC1suEw22c6xmspsp; __cf_bm=28MnnefdTV23iLTtJaYJdxU6magLYb4zpDGyMKHrHvw-1721964119-1.0.1.1-upkx6n8USULq_B4mAxmjY2Y1fh40DkcftOZXoRwQTHh0Th4MtCGN0Jin02G7ALcqrnx3huEnpGbujKoW9ETsBw' -d '{}'
-'''
-
-CHAT_CURL = '''
-curl -X POST 'https://pi.ai/api/chat' -H 'User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36' -H 'Accept: text/event-stream' -H 'Content-Type: application/json' -H 'authority: pi.ai' -H 'accept-language: en-PH,en-US;q=0.9,en;q=0.8' -H 'origin: https://pi.ai' -H 'referer: https://pi.ai/talk' -H 'sec-ch-ua: "Not-A.Brand";v="99", "Chromium";v="124"' -H 'sec-ch-ua-mobile: ?1' -H 'sec-ch-ua-platform: "Android"' -H 'sec-fetch-dest: empty' -H 'sec-fetch-mode: cors' -H 'sec-fetch-site: same-origin' -H 'x-api-version: 3' -H 'Cookie: __Host-session=r98ovC1suEw22c6xmspsp; __cf_bm=BS95IS_QPeqiUILdVHjCIV6YCd9Fs31a5egMZN8X0U0-1721961318-1.0.1.1-aPtKE.13enODokRbrdjpE7f31q68G0reBI2vmzK6rpmlFZfpAVQ_nIJYUPme_VOhC0TYuz5zAm4M34l.Xz1XFQ' -d '{}'
-'''
-
-VOICE_CURL = '''
-curl -X GET 'https://pi.ai/api/chat/voice?mode=eager&voice=voice{}&messageSid={}' -H 'User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36' -H 'authority: pi.ai' -H 'accept-language: en-PH,en-US;q=0.9,en;q=0.8' -H 'range: bytes=0-' -H 'referer: https://pi.ai/talk' -H 'sec-ch-ua: "Not-A.Brand";v="99", "Chromium";v="124"' -H 'sec-ch-ua-mobile: ?1' -H 'sec-ch-ua-platform: "Android"' -H 'sec-fetch-dest: audio' -H 'sec-fetch-mode: no-cors' -H 'sec-fetch-site: same-origin' -H 'Cookie: __Host-session=r98ovC1suEw22c6xmspsp; __cf_bm=BS95IS_QPeqiUILdVHjCIV6YCd9Fs31a5egMZN8X0U0-1721961318-1.0.1.1-aPtKE.13enODokRbrdjpE7f31q68G0reBI2vmzK6rpmlFZfpAVQ_nIJYUPme_VOhC0TYuz5zAm4M34l.Xz1XFQ'
-'''
+BASE_URL = 'https://pi.ai/api'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 
 class PyChatAPI:
     def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': USER_AGENT,
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://pi.ai/talk',
+            'Origin': 'https://pi.ai',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Ch-Ua': '"Google Chrome";v="91", "Chromium";v="91", ";Not A Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+        })
         self.conversation_id = self.get_conversation_id()
 
-    def run_curl(self, curl_command):
-        try:
-            result = subprocess.run(curl_command, shell=True, check=True, capture_output=True)
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            print(f"Error running curl command: {e}")
-            print(f"Stderr: {e.stderr}")
-            return None
-
     def get_conversation_id(self):
-        response = self.run_curl(CONVERSATIONS_CURL)
-        try:
-            data = json.loads(response)
-            return data.get('sid')
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON: {response}")
-            return None
+        response = self.session.post(f'{BASE_URL}/conversations', json={})
+        return response.json().get('sid')
 
     def send_message(self, message):
-        chat_data = json.dumps({"text": message, "conversation": self.conversation_id})
-        chat_curl = CHAT_CURL.replace("'{}'", f"'{chat_data}'")
-        response = self.run_curl(chat_curl)
-
+        chat_data = {"text": message, "conversation": self.conversation_id}
+        response = self.session.post(f'{BASE_URL}/chat', json=chat_data, stream=True)
+        
         received_sid = None
         full_response = ""
-        for line in response.decode('utf-8').splitlines():
-            if line.startswith('event: received'):
-                received_data = json.loads(next(line for line in response.decode('utf-8').splitlines() if line.startswith('data:')).split('data: ')[1])
-                received_sid = received_data.get('sid')
-            elif line.startswith('data:'):
-                try:
-                    event_data = json.loads(line[5:])
-                    if 'text' in event_data:
-                        full_response += event_data['text']
-                except json.JSONDecodeError:
-                    print(f"Error decoding JSON: {line}")
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8')
+                if decoded_line.startswith('event: received'):
+                    received_data = json.loads(next(response.iter_lines()).decode('utf-8').split('data: ')[1])
+                    received_sid = received_data.get('sid')
+                elif decoded_line.startswith('data:'):
+                    try:
+                        event_data = json.loads(decoded_line.split('data: ')[1])
+                        if 'text' in event_data:
+                            full_response += event_data['text']
+                    except json.JSONDecodeError:
+                        print(f"Error decoding JSON: {decoded_line}")
 
         return full_response.strip(), received_sid
 
     def get_voice(self, message_sid, voice_id):
-        voice_curl = VOICE_CURL.format(voice_id, message_sid)
-        voice_response = self.run_curl(voice_curl)
-        return voice_response
+        voice_url = f'{BASE_URL}/chat/voice?mode=eager&voice=voice{voice_id}&messageSid={message_sid}'
+        response = self.session.get(voice_url)
+        return response.content
 
 chat_api = PyChatAPI()
 
