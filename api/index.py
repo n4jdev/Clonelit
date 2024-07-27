@@ -27,6 +27,6 @@ def tts():
 
     return Response(stream_with_context(generate()), mimetype='audio/mpeg')
 
-# Vercel requires a handler function
-def handler(request):
-    return app(request.environ, lambda x, y: y)
+# Vercel serverless handler
+def handler(event, context):
+    return app(event, context)
