@@ -1,4 +1,4 @@
 Flask==3.0.3
 playwright
-aiohttp==3.7.4
-asyncio==3.4.3
+aiohttp
+asyncio
