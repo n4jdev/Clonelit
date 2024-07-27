@@ -1,5 +1,5 @@
 Flask==2.0.1
 Werkzeug==2.0.1
-playwright==1.30.0
+playwright
 aiohttp==3.7.4
 asyncio==3.4.3
