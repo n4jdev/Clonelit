@@ -2,6 +2,7 @@ import asyncio
 import json
 import aiohttp
 from playwright.async_api import async_playwright
+import os
 
 class PiAIClient:
     def __init__(self):
@@ -22,6 +23,8 @@ class PiAIClient:
             self.page = await self.context.new_page()
             await self.page.goto(f"https://{self.host}/talk")
             await asyncio.sleep(5)  # Wait for the page to load
+
+    # ... (rest of the code remains the same)
 
     async def init_conversation(self):
         await self.init_browser()
