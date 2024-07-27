@@ -7,13 +7,6 @@
       "config": {
         "maxLambdaSize": "15mb"
       }
-    },
-    {
-      "src": "build_script.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "playwright-browsers"
-      }
     }
   ],
   "routes": [
