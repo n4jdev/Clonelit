@@ -5,6 +5,11 @@ import asyncio
 app = Flask(__name__)
 tts_service = TTSService()
 
+def run_async(coroutine):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coroutine)
+
 @app.route('/api/tts', methods=['GET'])
 def tts():
     voice = request.args.get('voice', default='1', type=str)
@@ -17,7 +22,7 @@ def tts():
         return "Invalid voice parameter. Choose from 1-8", 400
 
     def generate():
-        for chunk in asyncio.run(tts_service.generate_speech(text, voice)):
+        for chunk in run_async(tts_service.generate_speech(text, voice)):
             yield chunk
 
     return Response(stream_with_context(generate()), mimetype='audio/mpeg')
