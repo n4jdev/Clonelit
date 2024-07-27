@@ -2,10 +2,19 @@ import asyncio
 from flask import Flask, request, Response, stream_with_context
 from pi_ai_client import PiAIClient
 import logging
+import os
+import subprocess
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Install Playwright and download browser on first run
+if not os.path.exists("/tmp/.playwright-installed"):
+    logger.info("Installing Playwright and downloading browser...")
+    subprocess.run(["pip", "install", "playwright"])
+    subprocess.run(["playwright", "install", "chromium"])
+    open("/tmp/.playwright-installed", "w").close()
 
 pi_ai_client = PiAIClient()
 
@@ -41,5 +50,5 @@ def text_to_speech():
 
     return Response(stream_with_context(generate()), mimetype='audio/mp3')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Add this line for Vercel
+app = app
