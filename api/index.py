@@ -24,5 +24,4 @@ def tts():
 
 # Vercel requires a handler function
 def handler(request):
-    with app.request_context(request.environ):
-        return app.full_dispatch_request()
+    return app(request.environ, lambda x, y: y)
