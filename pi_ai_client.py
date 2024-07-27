@@ -1,8 +1,6 @@
-import asyncio
-import json
 import aiohttp
+import json
 from playwright.async_api import async_playwright
-import os
 
 class PiAIClient:
     def __init__(self):
@@ -22,9 +20,7 @@ class PiAIClient:
             )
             self.page = await self.context.new_page()
             await self.page.goto(f"https://{self.host}/talk")
-            await asyncio.sleep(5)  # Wait for the page to load
-
-    # ... (rest of the code remains the same)
+            await self.page.wait_for_load_state('networkidle')
 
     async def init_conversation(self):
         await self.init_browser()
@@ -110,10 +106,7 @@ class PiAIClient:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
-                while True:
-                    chunk = await response.content.read(4096)
-                    if not chunk:
-                        break
+                async for chunk in response.content.iter_chunked(4096):
                     yield chunk
 
     async def close(self):
