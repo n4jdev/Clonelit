@@ -9,28 +9,23 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Global variable to store the browser instance
-browser = None
-
-async def setup_browser():
-    global browser
+# We'll use a function to get a new browser instance each time
+async def get_browser():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch()
-
-async def get_page():
-    if not browser:
-        await setup_browser()
-    context = await browser.new_context()
-    page = await context.new_page()
-    return page
+    return playwright, browser
 
 class Conversation:
     def __init__(self):
         self.conversation_id = None
         self.page = None
+        self.playwright = None
+        self.browser = None
 
     async def init_conversation(self):
-        self.page = await get_page()
+        self.playwright, self.browser = await get_browser()
+        context = await self.browser.new_context()
+        self.page = await context.new_page()
         await self.page.goto("https://pi.ai/talk")
         await asyncio.sleep(5)  # Wait for the page to load
 
@@ -85,6 +80,16 @@ class Conversation:
         except Exception as e:
             print(f"Error in ask: {str(e)}")
             return "An error occurred. Please try again."
+        finally:
+            await self.cleanup()
+
+    async def cleanup(self):
+        if self.page:
+            await self.page.close()
+        if self.browser:
+            await self.browser.close()
+        if self.playwright:
+            await self.playwright.stop()
 
 async def stream_audio(text, voice_id):
     conversation = Conversation()
@@ -99,9 +104,6 @@ async def stream_audio(text, voice_id):
         # Simulate audio processing delay
         await asyncio.sleep(0.1)
         yield chunk.encode()
-
-    # Close the page after streaming is complete
-    await conversation.page.close()
 
 @app.route('/api/tts', methods=['POST'])
 async def tts_endpoint():
@@ -120,14 +122,15 @@ async def tts_endpoint():
 
     return Response(stream_with_context(stream_audio(text, voice)), content_type='audio/mpeg')
 
+# Vercel serverless function entry point
+async def handler(request_data, **kwargs):
+    with app.test_request_context(method=request_data.get('method'), path=request_data.get('path'), json=request_data.get('body')):
+        response = await app.full_dispatch_request()
+    return {
+        'statusCode': response.status_code,
+        'headers': dict(response.headers),
+        'body': response.get_data(as_text=True)
+    }
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-# Vercel serverless function entry point
-async def handler(request):
-    async def run_app():
-        async with app.request_context(request):
-            response = await app.full_dispatch_request()
-        return response
-
-    return await asyncio.run(run_app())
