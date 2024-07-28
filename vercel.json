@@ -2,14 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/tts.py",
+      "src": "index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/tts.py"
+      "dest": "index.py"
     }
-  ]
+  ],
+  "env": {
+    "PLAYWRIGHT_BROWSERS_PATH": "0"
+  }
 }
