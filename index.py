@@ -1,31 +1,46 @@
-from flask import Flask, request, jsonify
+from http.server import BaseHTTPRequestHandler
+import json
 
-app = Flask(__name__)
+def parse_json_body(handler):
+    content_length = int(handler.headers['Content-Length'])
+    post_data = handler.rfile.read(content_length)
+    return json.loads(post_data.decode('utf-8'))
 
-@app.route('/api/tts', methods=['POST'])
-def tts_endpoint():
-    data = request.json
-    if not data or 'text' not in data or 'voice' not in data:
-        return jsonify({"error": "Text and voice are required"}), 400
-    
-    text = data['text']
-    voice = int(data['voice'])
-    
-    if not 1 <= voice <= 8:
-        return jsonify({"error": "Voice must be between 1 and 8"}), 400
-    
-    if len(text) > 500:  # Example character limit
-        return jsonify({"error": "Text exceeds character limit"}), 400
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write("Welcome to the TTS API!".encode())
 
-    # Here you would implement your TTS logic
-    # For now, we'll just return a placeholder response
-    return jsonify({"message": f"TTS request received. Text: {text}, Voice: {voice}"})
+    def do_POST(self):
+        if self.path == '/api/tts':
+            try:
+                data = parse_json_body(self)
+                if 'text' not in data or 'voice' not in data:
+                    self.send_error(400, "Text and voice are required")
+                    return
 
-@app.route('/')
-def home():
-    return "Welcome to the TTS API!"
+                text = data['text']
+                voice = int(data['voice'])
 
-# Vercel serverless function entry point
-def handler(request):
-    with app.test_request_context(request.headers, request.data):
-        return app.full_dispatch_request()
+                if not 1 <= voice <= 8:
+                    self.send_error(400, "Voice must be between 1 and 8")
+                    return
+
+                if len(text) > 500:
+                    self.send_error(400, "Text exceeds character limit")
+                    return
+
+                response = {
+                    "message": f"TTS request received. Text: {text}, Voice: {voice}"
+                }
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(response).encode())
+            except Exception as e:
+                self.send_error(500, str(e))
+        else:
+            self.send_error(404, "Not Found")
