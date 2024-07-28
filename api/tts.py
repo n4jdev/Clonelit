@@ -1,98 +1,133 @@
 import os
-import json
 import asyncio
-from flask import Flask, request, Response, stream_with_context
-from dotenv import load_dotenv
+import base64
+from flask import Flask, request, jsonify, Response, stream_with_context
 from playwright.async_api import async_playwright
+from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-MAX_TEXT_LENGTH = 500  # Maximum allowed text length
+# Global variable to store the browser instance
+browser = None
 
-class TTSClient:
+async def setup_browser():
+    global browser
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch()
+
+async def get_page():
+    if not browser:
+        await setup_browser()
+    context = await browser.new_context()
+    page = await context.new_page()
+    return page
+
+class Conversation:
     def __init__(self):
+        self.conversation_id = None
         self.page = None
 
-    async def init_browser(self):
-        playwright = await async_playwright().start()
-        browser = await playwright.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        )
-        self.page = await context.new_page()
+    async def init_conversation(self):
+        self.page = await get_page()
         await self.page.goto("https://pi.ai/talk")
         await asyncio.sleep(5)  # Wait for the page to load
 
-    async def generate_speech(self, text, voice_id):
+        try:
+            response = await self.page.evaluate("""
+                async () => {
+                    const response = await fetch("https://pi.ai/api/chat/start", {
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json",
+                            "X-Api-Version": "3",
+                            "content-type": "application/json"
+                        },
+                        body: "{}"
+                    });
+                    return await response.json();
+                }
+            """)
+            
+            if not isinstance(response, dict) or 'mainConversation' not in response:
+                raise Exception("Failed to init conversation")
+
+            self.conversation_id = response['mainConversation']['sid']
+        except Exception as e:
+            print(f"Error in init_conversation: {str(e)}")
+            raise
+
+    async def ask(self, text):
         if not self.page:
-            await self.init_browser()
+            await self.init_conversation()
 
         try:
             response = await self.page.evaluate(f"""
                 async () => {{
-                    const response = await fetch("https://pi.ai/api/tts", {{
+                    const response = await fetch("https://pi.ai/api/chat", {{
                         method: "POST",
                         headers: {{
-                            "Accept": "application/json",
+                            "Accept": "text/event-stream",
                             "Content-Type": "application/json",
                             "X-Api-Version": "3"
                         }},
                         body: JSON.stringify({{
-                            text: "{text}",
-                            voice: {voice_id}
+                            conversation: "{self.conversation_id}",
+                            text: "{text}"
                         }})
                     }});
-                    return await response.json();
+                    return await response.text();
                 }}
             """)
 
-            if 'url' in response:
-                audio_response = await self.page.evaluate(f"""
-                    async () => {{
-                        const response = await fetch("{response['url']}");
-                        const reader = response.body.getReader();
-                        const chunks = [];
-                        while (true) {{
-                            const {{done, value}} = await reader.read();
-                            if (done) break;
-                            chunks.push(value);
-                        }}
-                        return chunks;
-                    }}
-                """)
-                return audio_response
-            else:
-                raise Exception("Failed to generate speech")
+            return response
         except Exception as e:
-            print(f"Error in generate_speech: {str(e)}")
-            raise
+            print(f"Error in ask: {str(e)}")
+            return "An error occurred. Please try again."
 
-tts_client = TTSClient()
+async def stream_audio(text, voice_id):
+    conversation = Conversation()
+    await conversation.init_conversation()
+    
+    response = await conversation.ask(text)
+    
+    # Here you would typically process the response and generate audio
+    # For this example, we'll simulate audio streaming with text chunks
+    chunks = response.split()
+    for chunk in chunks:
+        # Simulate audio processing delay
+        await asyncio.sleep(0.1)
+        yield chunk.encode()
+
+    # Close the page after streaming is complete
+    await conversation.page.close()
 
 @app.route('/api/tts', methods=['POST'])
-async def tts():
+async def tts_endpoint():
     data = request.json
-    text = data.get('text', '')
-    voice = data.get('voice', 1)
-
-    if not text or len(text) > MAX_TEXT_LENGTH:
-        return {'error': f'Text must be between 1 and {MAX_TEXT_LENGTH} characters'}, 400
-
+    if not data or 'text' not in data or 'voice' not in data:
+        return jsonify({"error": "Text and voice are required"}), 400
+    
+    text = data['text']
+    voice = int(data['voice'])
+    
     if not 1 <= voice <= 8:
-        return {'error': 'Voice must be between 1 and 8'}, 400
+        return jsonify({"error": "Voice must be between 1 and 8"}), 400
+    
+    if len(text) > 500:  # Example character limit
+        return jsonify({"error": "Text exceeds character limit"}), 400
 
-    try:
-        audio_chunks = await tts_client.generate_speech(text, voice)
-
-        def generate():
-            for chunk in audio_chunks:
-                yield bytes(chunk)
-
-        return Response(stream_with_context(generate()), mimetype='audio/mpeg')
-    except Exception as e:
-        return {'error': str(e)}, 500
+    return Response(stream_with_context(stream_audio(text, voice)), content_type='audio/mpeg')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# Vercel serverless function entry point
+async def handler(request):
+    async def run_app():
+        async with app.request_context(request):
+            response = await app.full_dispatch_request()
+        return response
+
+    return await asyncio.run(run_app())
