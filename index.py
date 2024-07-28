@@ -9,7 +9,6 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# We'll use a function to get a new browser instance each time
 async def get_browser():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch()
@@ -122,15 +121,13 @@ async def tts_endpoint():
 
     return Response(stream_with_context(stream_audio(text, voice)), content_type='audio/mpeg')
 
-# Vercel serverless function entry point
-async def handler(request_data, **kwargs):
-    with app.test_request_context(method=request_data.get('method'), path=request_data.get('path'), json=request_data.get('body')):
-        response = await app.full_dispatch_request()
-    return {
-        'statusCode': response.status_code,
-        'headers': dict(response.headers),
-        'body': response.get_data(as_text=True)
-    }
+@app.route('/')
+def home():
+    return "Welcome to the TTS API!"
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# Vercel serverless function entry point
+def handler(request):
+    return app(request)
