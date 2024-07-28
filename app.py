@@ -11,6 +11,7 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "streamlit", "pla
 
 # Install Playwright browsers
 subprocess.check_call([sys.executable, "-m", "playwright", "install"])
+subprocess.check_call([sys.executable, "-m", "playwright", "install-deps"])
 
 class Tools:
     debug = True
