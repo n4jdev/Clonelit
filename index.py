@@ -25,5 +25,7 @@ def tts_endpoint():
 def home():
     return "Welcome to the TTS API!"
 
-def handler(event, context):
-    return app(event, context)
+# Vercel serverless function entry point
+def handler(request):
+    with app.test_request_context(request.headers, request.data):
+        return app.full_dispatch_request()
