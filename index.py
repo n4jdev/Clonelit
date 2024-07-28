@@ -1,153 +1,116 @@
-from http.server import BaseHTTPRequestHandler
 import json
+import base64
 import asyncio
-import os
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import parse_qs
 from playwright.async_api import async_playwright
-from dotenv import load_dotenv
-from concurrent.futures import ThreadPoolExecutor
 
-load_dotenv()
+MAX_CHAR_LIMIT = 500
 
-async def get_browser():
-    playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch()
-    return playwright, browser
+class TTSHandler(BaseHTTPRequestHandler):
+    async def generate_audio(self, text, voice_id):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                viewport={"width": 1280, "height": 720},
+                device_scale_factor=1,
+            )
+            page = await context.new_page()
+            await page.goto("https://pi.ai/talk")
+            await asyncio.sleep(5)  # Wait for the page to load
 
-class Conversation:
-    def __init__(self):
-        self.conversation_id = None
-        self.page = None
-        self.playwright = None
-        self.browser = None
-
-    async def init_conversation(self):
-        self.playwright, self.browser = await get_browser()
-        context = await self.browser.new_context()
-        self.page = await context.new_page()
-        await self.page.goto("https://pi.ai/talk")
-        await asyncio.sleep(5)  # Wait for the page to load
-
-        try:
-            response = await self.page.evaluate("""
-                async () => {
-                    const response = await fetch("https://pi.ai/api/chat/start", {
-                        method: "POST",
-                        headers: {
-                            "accept": "application/json",
-                            "X-Api-Version": "3",
-                            "content-type": "application/json"
-                        },
-                        body: "{}"
-                    });
-                    return await response.json();
-                }
-            """)
-            
-            if not isinstance(response, dict) or 'mainConversation' not in response:
-                raise Exception("Failed to init conversation")
-
-            self.conversation_id = response['mainConversation']['sid']
-        except Exception as e:
-            print(f"Error in init_conversation: {str(e)}")
-            raise
-
-    async def ask(self, text):
-        if not self.page:
-            await self.init_conversation()
-
-        try:
-            response = await self.page.evaluate(f"""
-                async () => {{
-                    const response = await fetch("https://pi.ai/api/chat", {{
-                        method: "POST",
-                        headers: {{
-                            "Accept": "text/event-stream",
-                            "Content-Type": "application/json",
-                            "X-Api-Version": "3"
-                        }},
-                        body: JSON.stringify({{
-                            conversation: "{self.conversation_id}",
-                            text: "{text}"
-                        }})
-                    }});
-                    return await response.text();
-                }}
-            """)
-
-            return response
-        except Exception as e:
-            print(f"Error in ask: {str(e)}")
-            return "An error occurred. Please try again."
-        finally:
-            await self.cleanup()
-
-    async def cleanup(self):
-        if self.page:
-            await self.page.close()
-        if self.browser:
-            await self.browser.close()
-        if self.playwright:
-            await self.playwright.stop()
-
-async def stream_audio(text, voice_id):
-    conversation = Conversation()
-    await conversation.init_conversation()
-    
-    response = await conversation.ask(text)
-    
-    # Here you would typically process the response and generate audio
-    # For this example, we'll simulate audio streaming with text chunks
-    chunks = response.split()
-    for chunk in chunks:
-        # Simulate audio processing delay
-        await asyncio.sleep(0.1)
-        yield chunk.encode()
-
-def parse_json_body(handler):
-    content_length = int(handler.headers['Content-Length'])
-    post_data = handler.rfile.read(content_length)
-    return json.loads(post_data.decode('utf-8'))
-
-def run_async(coroutine):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coroutine)
-
-class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write("Welcome to the TTS API!".encode())
-
-    def do_POST(self):
-        if self.path == '/api/tts':
             try:
-                data = parse_json_body(self)
-                if 'text' not in data or 'voice' not in data:
-                    self.send_error(400, "Text and voice are required")
-                    return
+                response = await page.evaluate("""
+                    async () => {
+                        const response = await fetch("https://pi.ai/api/chat/start", {
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json",
+                                "X-Api-Version": "3",
+                                "content-type": "application/json"
+                            },
+                            body: "{}"
+                        });
+                        return await response.json();
+                    }
+                """)
 
-                text = data['text']
-                voice = int(data['voice'])
+                if not isinstance(response, dict) or 'mainConversation' not in response:
+                    raise Exception("Failed to init conversation")
 
-                if not 1 <= voice <= 8:
-                    self.send_error(400, "Voice must be between 1 and 8")
-                    return
+                conversation_id = response['mainConversation']['sid']
 
-                if len(text) > 500:
-                    self.send_error(400, "Text exceeds character limit")
-                    return
+                audio_response = await page.evaluate(f"""
+                    async () => {{
+                        const response = await fetch("https://pi.ai/api/chat", {{
+                            method: "POST",
+                            headers: {{
+                                "Accept": "text/event-stream",
+                                "Content-Type": "application/json",
+                                "X-Api-Version": "3"
+                            }},
+                            body: JSON.stringify({{
+                                conversation: "{conversation_id}",
+                                text: "{text}"
+                            }})
+                        }});
+                        return await response.text();
+                    }}
+                """)
 
-                self.send_response(200)
-                self.send_header('Content-type', 'audio/mpeg')
-                self.send_header('Transfer-Encoding', 'chunked')
-                self.end_headers()
-
-                for chunk in run_async(stream_audio(text, voice)):
-                    self.wfile.write(chunk)
+                audio_data = b""
+                for line in audio_response.split('\n'):
+                    if line.startswith('data: '):
+                        try:
+                            data = json.loads(line[6:])
+                            if isinstance(data, dict) and 'audio' in data:
+                                audio_chunk = base64.b64decode(data['audio'])
+                                audio_data += audio_chunk
+                                yield audio_chunk
+                        except json.JSONDecodeError:
+                            pass
 
             except Exception as e:
-                self.send_error(500, str(e))
+                print(f"Error in generate_audio: {str(e)}")
+                yield b""
+            finally:
+                await browser.close()
+
+    def do_GET(self):
+        if self.path.startswith('/api/tts'):
+            params = parse_qs(self.path.split('?')[1]) if '?' in self.path else {}
+            voice = params.get('voice', ['1'])[0]
+            text = params.get('text', [''])[0]
+
+            if not text:
+                self.send_error(400, "Missing 'text' parameter")
+                return
+
+            if len(text) > MAX_CHAR_LIMIT:
+                self.send_error(400, f"Text exceeds {MAX_CHAR_LIMIT} character limit")
+                return
+
+            if voice not in map(str, range(1, 9)):
+                self.send_error(400, "Invalid 'voice' parameter. Must be between 1 and 8.")
+                return
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'audio/mpeg')
+            self.send_header('Transfer-Encoding', 'chunked')
+            self.end_headers()
+
+            async def stream_wrapper():
+                async for chunk in self.generate_audio(text, voice):
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
+
+            asyncio.run(stream_wrapper())
         else:
             self.send_error(404, "Not Found")
+
+    def do_POST(self):
+        self.send_error(405, "Method Not Allowed")
+
+def handler(event, context):
+    return TTSHandler(event, context)
