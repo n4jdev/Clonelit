@@ -4,6 +4,7 @@ import asyncio
 import os
 from playwright.async_api import async_playwright
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
@@ -107,6 +108,11 @@ def parse_json_body(handler):
     post_data = handler.rfile.read(content_length)
     return json.loads(post_data.decode('utf-8'))
 
+def run_async(coroutine):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coroutine)
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -138,9 +144,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header('Transfer-Encoding', 'chunked')
                 self.end_headers()
 
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                for chunk in loop.run_until_complete(stream_audio(text, voice)):
+                for chunk in run_async(stream_audio(text, voice)):
                     self.wfile.write(chunk)
 
             except Exception as e:
