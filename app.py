@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import asyncio
 import json
@@ -9,9 +10,9 @@ import sys
 # Install required packages
 subprocess.check_call([sys.executable, "-m", "pip", "install", "streamlit", "playwright"])
 
-# Install Playwright browsers
-subprocess.check_call([sys.executable, "-m", "playwright", "install"])
-subprocess.check_call([sys.executable, "-m", "playwright", "install-deps"])
+# Install Playwright browsers and dependencies
+os.system('playwright install')
+os.system('playwright install-deps')
 
 class Tools:
     debug = True
