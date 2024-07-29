@@ -4,10 +4,22 @@ import json
 import base64
 import os
 import logging
+import io
 
 # Set up logging
+class StreamlitHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.logs = []
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.logs.append(log_entry)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+streamlit_handler = StreamlitHandler()
+logger.addHandler(streamlit_handler)
 
 def get_upload_url(file_name, file_size):
     logger.info(f"Getting upload URL for file: {file_name}, size: {file_size}")
@@ -222,4 +234,4 @@ if uploaded_file is not None:
     logger.info(f"Removed temporary file: {uploaded_file.name}")
 
 # Display logs in Streamlit
-st.text_area("Logs", value='\n'.join(handler.format(record) for record in logger.handlers[0].buffer), height=300)
+st.text_area("Logs", value='\n'.join(streamlit_handler.logs), height=300)
