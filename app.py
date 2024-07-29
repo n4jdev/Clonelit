@@ -119,8 +119,8 @@ def start_workflow(file_url, max_retries=3):
                     "cache": {},
                     "exists": {}
                 },
-                "run_id": f"{int(time.time() * 1000)}x{int(time.time() * 1000000)}",
-                "server_call_id": f"{int(time.time() * 1000)}x{int(time.time() * 1000000)}",
+                "run_id": "1722234365445x688391142658434600",
+                "server_call_id": "1722234365445x688391142658434600",
                 "item_id": "cmMxd",
                 "element_id": "cmMxX",
                 "uid_generator": {"timestamp": int(time.time() * 1000), "seed": int(time.time() * 1000000)},
