@@ -172,16 +172,24 @@ if uploaded_file is not None:
         
         # Step 3: Start workflow
         workflow_response = start_workflow(upload_info['file_url'])
-        voice_id = workflow_response['1722237867918x144831640779072420']['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
         
-        # Step 4: Generate TTS
-        text_input = st.text_area("Enter the text you want to convert to speech:")
-        if st.button("Generate TTS"):
-            if text_input:
-                tts_audio = generate_tts(voice_id, text_input)
-                st.audio(tts_audio, format="audio/mp3")
-            else:
-                st.warning("Please enter some text to convert to speech.")
+        # Extract the voice ID from the correct path in the response
+        try:
+            server_call_id = list(workflow_response.keys())[0]  # Get the dynamic server call ID
+            voice_id = workflow_response[server_call_id]['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
+            st.success(f"Voice ID obtained: {voice_id}")
+            
+            # Step 4: Generate TTS
+            text_input = st.text_area("Enter the text you want to convert to speech:")
+            if st.button("Generate TTS"):
+                if text_input:
+                    tts_audio = generate_tts(voice_id, text_input)
+                    st.audio(tts_audio, format="audio/mp3")
+                else:
+                    st.warning("Please enter some text to convert to speech.")
+        except KeyError as e:
+            st.error(f"Error extracting voice ID from the API response. Please check the API response structure: {e}")
+            st.json(workflow_response)  # Display the full response for debugging
     else:
         st.error("Failed to upload voice sample.")
 
