@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import json
 import base64
-import io
+import os
 
 def get_upload_url(file_name, file_size):
     url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl"
@@ -56,12 +56,10 @@ def get_upload_url(file_name, file_size):
     response = requests.post(url, headers=headers, json=data)
     return response.json()
 
-def upload_file(upload_url, fields, file_content):
-    response = requests.post(
-        upload_url,
-        data=fields,
-        files={'file': ('voice_cloning', file_content, 'audio/mpeg')}
-    )
+def upload_file(upload_url, fields, file_path):
+    with open(file_path, 'rb') as f:
+        files = {'file': (os.path.basename(file_path), f, 'audio/mpeg')}
+        response = requests.post(upload_url, data=fields, files=files)
     return response.status_code == 204
 
 def start_workflow(file_url):
@@ -157,40 +155,35 @@ def generate_tts(voice_id, text):
 
 st.title("Voice Cloning TTS App")
 
-uploaded_file = st.file_uploader("Upload your voice sample (MP3)", type="mp3")
+uploaded_file = st.file_uploader("Upload an MP3 file", type="mp3")
 
 if uploaded_file is not None:
-    file_content = uploaded_file.read()
-    file_size = len(file_content)
+    file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
+    st.write(file_details)
     
-    # Step 1: Get upload URL
-    upload_info = get_upload_url(uploaded_file.name, file_size)
+    # Save the uploaded file temporarily
+    with open(uploaded_file.name, "wb") as f:
+        f.write(uploaded_file.getbuffer())
     
-    # Step 2: Upload file
-    if upload_file(upload_info['url'], upload_info['fields'], file_content):
-        st.success("Voice sample uploaded successfully!")
+    # Get upload URL
+    upload_info = get_upload_url(uploaded_file.name, uploaded_file.size)
+    
+    # Upload file
+    if upload_file(upload_info['url'], upload_info['fields'], uploaded_file.name):
+        st.success("File uploaded successfully!")
         
-        # Step 3: Start workflow
+        # Start workflow
         workflow_response = start_workflow(upload_info['file_url'])
+        voice_id = workflow_response['1722237867918x144831640779072420']['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
+        st.write(f"Voice ID: {voice_id}")
         
-        # Extract the voice ID from the correct path in the response
-        try:
-            server_call_id = list(workflow_response.keys())[0]  # Get the dynamic server call ID
-            voice_id = workflow_response[server_call_id]['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
-            st.success(f"Voice ID obtained: {voice_id}")
-            
-            # Step 4: Generate TTS
-            text_input = st.text_area("Enter the text you want to convert to speech:")
-            if st.button("Generate TTS"):
-                if text_input:
-                    tts_audio = generate_tts(voice_id, text_input)
-                    st.audio(tts_audio, format="audio/mp3")
-                else:
-                    st.warning("Please enter some text to convert to speech.")
-        except KeyError as e:
-            st.error(f"Error extracting voice ID from the API response. Please check the API response structure: {e}")
-            st.json(workflow_response)  # Display the full response for debugging
+        # Generate TTS
+        text_input = st.text_input("Enter text for TTS:")
+        if st.button("Generate TTS"):
+            audio_content = generate_tts(voice_id, text_input)
+            st.audio(audio_content, format='audio/mp3')
     else:
-        st.error("Failed to upload voice sample.")
+        st.error("Failed to upload file.")
 
-st.write("Note: This app uses external APIs and may not work if the APIs are changed or become unavailable.")
+    # Clean up the temporary file
+    os.remove(uploaded_file.name)
