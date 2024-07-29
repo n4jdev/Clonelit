@@ -122,7 +122,6 @@ def start_workflow(file_url):
         "user_id": "1722234365445x688391142658434600"
     }
     response = requests.post(url, headers=headers, json=data)
-    logger.info(f"Workflow response: {response.text}")
     return response.json()
 
 def generate_tts(voice_id, text):
