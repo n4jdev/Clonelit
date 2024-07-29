@@ -108,11 +108,11 @@ def start_workflow(file_url):
                 "cache": {},
                 "exists": {}
             },
-            "run_id": "1722257465855x763661702156541800",
-            "server_call_id": "1722257465861x213023273471344440",
+            "run_id": "1722260143595x160156502110182270",
+            "server_call_id": "1722260143608x779852802946257000",
             "item_id": "cmMxd",
             "element_id": "cmMxX",
-            "uid_generator": {"timestamp": 1722257465855, "seed": 27772894338195630},
+            "uid_generator": {"timestamp": 1722260143595, "seed": 843560469570483200},
             "random_seed": 0.20947760161398143,
             "current_date_time": 1722237867610,
             "current_wf_params": {}
@@ -122,6 +122,7 @@ def start_workflow(file_url):
         "user_id": "1722234365445x688391142658434600"
     }
     response = requests.post(url, headers=headers, json=data)
+    logger.info(f"Workflow response: {response.text}")
     return response.json()
 
 def generate_tts(voice_id, text):
