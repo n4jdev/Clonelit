@@ -4,15 +4,23 @@ import json
 import base64
 import os
 import logging
+import time
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_upload_url(file_name, file_size):
-    logger.info(f"Getting upload URL for file: {file_name}, size: {file_size}")
-    url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl"
-    headers = {
+# Global variables for session management
+SESSION_COOKIES = None
+X_BUBBLE_FIBER_ID = None
+
+def update_session_info(response):
+    global SESSION_COOKIES, X_BUBBLE_FIBER_ID
+    SESSION_COOKIES = response.cookies
+    X_BUBBLE_FIBER_ID = response.headers.get('x-bubble-fiber-id')
+
+def get_headers():
+    return {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
         'Accept': 'application/json, text/javascript, */*; q=0.01',
         'Content-Type': 'application/json',
@@ -28,11 +36,16 @@ def get_upload_url(file_name, file_size):
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin',
         'x-bubble-breaking-revision': '5',
-        'x-bubble-fiber-id': '1722237865117x100995695629340080',
+        'x-bubble-fiber-id': X_BUBBLE_FIBER_ID,
         'x-bubble-pl': '1722237591965x1002',
         'x-bubble-r': 'https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice',
         'x-requested-with': 'XMLHttpRequest',
     }
+
+def get_upload_url(file_name, file_size):
+    logger.info(f"Getting upload URL for file: {file_name}, size: {file_size}")
+    url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl"
+    headers = get_headers()
     data = {
         "public": True,
         "service": "bubble",
@@ -49,7 +62,7 @@ def get_upload_url(file_name, file_size):
                 "exists": {}
             },
             "element_id": "cmMxX",
-            "current_date_time": 1722237864807,
+            "current_date_time": int(time.time() * 1000),
             "timezone_offset": -480,
             "timezone_string": "Asia/Manila",
             "inputs_must_be_valid": False,
@@ -59,7 +72,8 @@ def get_upload_url(file_name, file_size):
         "size": file_size,
         "content_type": "audio/mpeg"
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data, cookies=SESSION_COOKIES)
+    update_session_info(response)
     logger.info(f"Upload URL response: {response.text}")
     return response.json()
 
@@ -74,27 +88,7 @@ def upload_file(upload_url, fields, file_path):
 def start_workflow(file_url):
     logger.info(f"Starting workflow with file URL: {file_url}")
     url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/workflow/start"
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Content-Type': 'application/json',
-        'authority': 'playhttexttospeechdemo.bubbleapps.io',
-        'accept-language': 'en-PH,en-US;q=0.9,en;q=0.8',
-        'cache-control': 'no-cache',
-        'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
-        'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
-        'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
-        'sec-ch-ua-mobile': '?1',
-        'sec-ch-ua-platform': '"Android"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'x-bubble-breaking-revision': '5',
-        'x-bubble-fiber-id': '1722237867919x598363094394157200',
-        'x-bubble-pl': '1722237591965x1002',
-        'x-bubble-r': 'https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice',
-        'x-requested-with': 'XMLHttpRequest',
-    }
+    headers = get_headers()
     data = {
         "wait_for": [],
         "app_last_change": "19875058729",
@@ -118,20 +112,21 @@ def start_workflow(file_url):
                 "cache": {},
                 "exists": {}
             },
-            "run_id": "1722237867910x800700790731605900",
-            "server_call_id": "1722237867918x144831640779072420",
+            "run_id": f"{int(time.time() * 1000)}x{int(time.time() * 1000000)}",
+            "server_call_id": f"{int(time.time() * 1000)}x{int(time.time() * 1000000)}",
             "item_id": "cmMxd",
             "element_id": "cmMxX",
-            "uid_generator": {"timestamp": 1722237867910, "seed": 962217465675474300},
+            "uid_generator": {"timestamp": int(time.time() * 1000), "seed": int(time.time() * 1000000)},
             "random_seed": 0.20947760161398143,
-            "current_date_time": 1722237867610,
+            "current_date_time": int(time.time() * 1000),
             "current_wf_params": {}
         }],
         "timezone_offset": -480,
         "timezone_string": "Asia/Manila",
         "user_id": "1722234365445x688391142658434600"
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data, cookies=SESSION_COOKIES)
+    update_session_info(response)
     logger.info(f"Workflow response: {response.text}")
     return response.json()
 
@@ -222,4 +217,16 @@ if uploaded_file is not None:
     logger.info(f"Removed temporary file: {uploaded_file.name}")
 
 # Display logs in Streamlit
-st.text_area("Logs", value='\n'.join(handler.format(record) for record in logger.handlers[0].buffer), height=300)
+if 'log_output' not in st.session_state:
+    st.session_state.log_output = []
+
+class StreamlitHandler(logging.Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        st.session_state.log_output.append(log_entry)
+
+streamlit_handler = StreamlitHandler()
+streamlit_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(streamlit_handler)
+
+st.text_area("Logs", value='\n'.join(st.session_state.log_output), height=300)
