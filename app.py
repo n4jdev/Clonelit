@@ -3,26 +3,8 @@ import requests
 import json
 import base64
 import os
-import logging
-import io
-
-# Set up logging
-class StreamlitHandler(logging.Handler):
-    def __init__(self):
-        super().__init__()
-        self.logs = []
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        self.logs.append(log_entry)
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-streamlit_handler = StreamlitHandler()
-logger.addHandler(streamlit_handler)
 
 def get_upload_url(file_name, file_size):
-    logger.info(f"Getting upload URL for file: {file_name}, size: {file_size}")
     url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
@@ -72,19 +54,15 @@ def get_upload_url(file_name, file_size):
         "content_type": "audio/mpeg"
     }
     response = requests.post(url, headers=headers, json=data)
-    logger.info(f"Upload URL response: {response.text}")
     return response.json()
 
 def upload_file(upload_url, fields, file_path):
-    logger.info(f"Uploading file: {file_path}")
     with open(file_path, 'rb') as f:
         files = {'file': (os.path.basename(file_path), f, 'audio/mpeg')}
         response = requests.post(upload_url, data=fields, files=files)
-    logger.info(f"Upload response status code: {response.status_code}")
     return response.status_code == 204
 
 def start_workflow(file_url):
-    logger.info(f"Starting workflow with file URL: {file_url}")
     url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/workflow/start"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
@@ -144,11 +122,9 @@ def start_workflow(file_url):
         "user_id": "1722234365445x688391142658434600"
     }
     response = requests.post(url, headers=headers, json=data)
-    logger.info(f"Workflow response: {response.text}")
     return response.json()
 
 def generate_tts(voice_id, text):
-    logger.info(f"Generating TTS with voice ID: {voice_id}, text: {text}")
     url = "https://europe-west3-bubble-io-284016.cloudfunctions.net/get-stream"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
@@ -175,7 +151,6 @@ def generate_tts(voice_id, text):
         "quality": "premium"
     }
     response = requests.post(url, headers=headers, json=data)
-    logger.info(f"TTS generation response status code: {response.status_code}")
     return response.content
 
 st.title("Voice Cloning TTS App")
@@ -185,7 +160,6 @@ uploaded_file = st.file_uploader("Upload an MP3 file", type="mp3")
 if uploaded_file is not None:
     file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
     st.write(file_details)
-    logger.info(f"File details: {file_details}")
     
     # Save the uploaded file temporarily
     with open(uploaded_file.name, "wb") as f:
@@ -215,7 +189,6 @@ if uploaded_file is not None:
 
         if voice_id:
             st.write(f"Voice ID: {voice_id}")
-            logger.info(f"Extracted Voice ID: {voice_id}")
             
             # Generate TTS
             text_input = st.text_input("Enter text for TTS:")
@@ -224,14 +197,8 @@ if uploaded_file is not None:
                 st.audio(audio_content, format='audio/mp3')
         else:
             st.error("Failed to extract Voice ID. Please try again.")
-            logger.error("Failed to extract Voice ID from workflow response")
     else:
         st.error("Failed to upload file.")
-        logger.error("Failed to upload file")
 
     # Clean up the temporary file
     os.remove(uploaded_file.name)
-    logger.info(f"Removed temporary file: {uploaded_file.name}")
-
-# Display logs in Streamlit
-st.text_area("Logs", value='\n'.join(streamlit_handler.logs), height=300)
