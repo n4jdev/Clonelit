@@ -53,7 +53,7 @@ def make_first_api_call(file_name, file_size):
         },
         "name": file_name,
         "size": file_size,
-        "content_type": "audio/x-m4a"
+        "content_type": "audio/mp3"
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.json()
