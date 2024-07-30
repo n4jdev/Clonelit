@@ -1,80 +1,151 @@
 import streamlit as st
 import requests
 import json
-import io
-import base64
 
-def get_upload_url(file_name, file_size):
-    url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl"
+# Function to retrieve cookies from the third API endpoint
+def get_cookies():
+    # Placeholder for the actual logic to retrieve cookies
+    # This should be replaced with the actual implementation
+    cookies = {
+        'playhttexttospeechdemo_test_u2main': 'bus|1722303920846x322366301969347260|1722303920867x234219269417406100',
+        'playhttexttospeechdemo_test_u2main.sig': 'qg3jhxENBXCklzRicwfPxg2pmbQ',
+        'playhttexttospeechdemo_u1_testmain': '1722303920846x322366301969347260'
+    }
+    return cookies
+
+# Function to run the first API endpoint
+def run_first_endpoint(file, cookies):
+    url = 'https://playhttexttospeechdemo.bubbleapps.io/version-test/fileupload/geturl'
     headers = {
         'authority': 'playhttexttospeechdemo.bubbleapps.io',
         'accept': 'application/json, text/javascript, */*; q=0.01',
         'accept-language': 'en-PH,en-US;q=0.9,en;q=0.8',
+        'cache-control': 'no-cache',
         'content-type': 'application/json',
         'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
         'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
+        'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
+        'sec-ch-ua-mobile': '?1',
+        'sec-ch-ua-platform': '"Android"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
         'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        'x-bubble-breaking-revision': '5',
+        'x-bubble-fiber-id': '1722307766856x931152043432026000',
+        'x-bubble-pl': '1722307752719x826',
+        'x-bubble-r': 'https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice',
+        'x-requested-with': 'XMLHttpRequest'
     }
     data = {
         "public": True,
         "service": "bubble",
         "timezone_string": "Asia/Manila",
-        "name": file_name,
-        "size": file_size,
-        "content_type": "audio/x-m4a"
+        "serialized_context": {
+            "client_state": {
+                "element_instances": {
+                    "cmMuK": {"dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMuK", "parent_element_id": "cmMsT"},
+                    "cmMxX": {"dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMxX", "parent_element_id": "cmMuK"}
+                },
+                "element_state": {
+                    "1348695171700984260__LOOKUP__ElementInstance::cmMuK": {"group_data": None}
+                },
+                "other_data": {"Current Page Scroll Position": 0, "Current Page Width": 360},
+                "cache": {},
+                "exists": {}
+            },
+            "element_id": "cmMxX",
+            "current_date_time": 1722307766685,
+            "timezone_offset": -480,
+            "timezone_string": "Asia/Manila",
+            "inputs_must_be_valid": False,
+            "current_wf_params": {}
+        },
+        "name": file.name,
+        "size": file.size,
+        "content_type": file.type
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, cookies=cookies, data=json.dumps(data))
     return response.json()
 
-def upload_file(upload_url, fields, file):
-    response = requests.post(upload_url, data=fields, files={'file': file})
-    return response.status_code == 204
+# Function to run the second API endpoint
+def run_second_endpoint(file, file_url_data):
+    url = 'https://s3.amazonaws.com/appforest_uf'
+    fields = file_url_data['fields']
+    files = {
+        'file': (file.name, file.read(), file.type)
+    }
+    response = requests.post(url, data=fields, files=files)
+    return response
 
-def start_workflow(file_url):
-    url = "https://playhttexttospeechdemo.bubbleapps.io/version-test/workflow/start"
+# Function to run the third API endpoint
+def run_third_endpoint(file_url, cookies):
+    url = 'https://playhttexttospeechdemo.bubbleapps.io/version-test/workflow/start'
     headers = {
         'authority': 'playhttexttospeechdemo.bubbleapps.io',
         'accept': 'application/json, text/javascript, */*; q=0.01',
         'accept-language': 'en-PH,en-US;q=0.9,en;q=0.8',
+        'cache-control': 'no-cache',
         'content-type': 'application/json',
         'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
         'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
+        'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
+        'sec-ch-ua-mobile': '?1',
+        'sec-ch-ua-platform': '"Android"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
         'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        'x-bubble-breaking-revision': '5',
+        'x-bubble-fiber-id': '1722307769084x485968983730036740',
+        'x-bubble-pl': '1722307752719x826',
+        'x-bubble-r': 'https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice',
+        'x-requested-with': 'XMLHttpRequest'
     }
     data = {
         "wait_for": [],
         "app_last_change": "19875058729",
         "client_breaking_revision": 5,
-        "calls": [{
-            "client_state": {
-                "element_instances": {
-                    "cmMxX": {
-                        "dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMxX",
-                        "parent_element_id": "cmMuK"
-                    }
+        "calls": [
+            {
+                "client_state": {
+                    "element_instances": {
+                        "cmMxX": {"dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMxX", "parent_element_id": "cmMuK"},
+                        "cmMsq": {"dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMsq", "parent_element_id": "cmMsk"},
+                        "cmMuK": {"dehydrated": "1348695171700984260__LOOKUP__ElementInstance::cmMuK", "parent_element_id": "cmMsT"}
+                    },
+                    "element_state": {
+                        "1348695171700984260__LOOKUP__ElementInstance::cmMxX": {
+                            "is_visible": True,
+                            "value_that_is_valid": file_url,
+                            "value": file_url
+                        },
+                        "1348695171700984260__LOOKUP__ElementInstance::cmMuK": {"group_data": None}
+                    },
+                    "other_data": {"Current Page Scroll Position": 0, "Current Page Width": 360},
+                    "cache": {},
+                    "exists": {}
                 },
-                "element_state": {
-                    "1348695171700984260__LOOKUP__ElementInstance::cmMxX": {
-                        "is_visible": True,
-                        "value_that_is_valid": file_url,
-                        "value": file_url
-                    }
-                }
-            },
-            "run_id": "1722307769078x576144250376689800",
-            "server_call_id": "1722307769083x636360784032498700",
-            "item_id": "cmMxd",
-            "element_id": "cmMxX",
-        }],
+                "run_id": "1722307769078x576144250376689800",
+                "server_call_id": "1722307769083x636360784032498700",
+                "item_id": "cmMxd",
+                "element_id": "cmMxX",
+                "uid_generator": {"timestamp": 1722307769078, "seed": 810702303449379000},
+                "random_seed": 0.09531869096932688,
+                "current_date_time": 1722307768913,
+                "current_wf_params": {}
+            }
+        ],
         "timezone_offset": -480,
         "timezone_string": "Asia/Manila",
         "user_id": "1722303920846x322366301969347260"
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, cookies=cookies, data=json.dumps(data))
     return response.json()
 
-def generate_tts(voice_id, text):
-    url = "https://europe-west3-bubble-io-284016.cloudfunctions.net/get-stream"
+# Function to run the fourth API endpoint
+def run_fourth_endpoint(voice_id, text):
+    url = 'https://europe-west3-bubble-io-284016.cloudfunctions.net/get-stream'
     headers = {
         'authority': 'europe-west3-bubble-io-284016.cloudfunctions.net',
         'accept': '*/*',
@@ -83,7 +154,13 @@ def generate_tts(voice_id, text):
         'content-type': 'application/json',
         'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
         'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
-        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
+        'sec-ch-ua-mobile': '?1',
+        'sec-ch-ua-platform': '"Android"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'cross-site',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36'
     }
     data = {
         "input": text,
@@ -93,42 +170,28 @@ def generate_tts(voice_id, text):
         "speed": 1,
         "quality": "premium"
     }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.content
 
-st.title("Voice Cloning TTS App")
-
-uploaded_file = st.file_uploader("Upload your voice sample (MP3)", type="mp3")
-
-if uploaded_file is not None:
-    file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
-    st.write(file_details)
-
-    # Step 1: Get upload URL
-    upload_info = get_upload_url(uploaded_file.name, uploaded_file.size)
+# Streamlit App
+def main():
+    st.title("TTS Voice Cloning App")
     
-    # Step 2: Upload file
-    if upload_file(upload_info['url'], upload_info['fields'], uploaded_file):
-        st.success("File uploaded successfully!")
+    uploaded_file = st.file_uploader("Upload an MP3 file", type=["mp3"])
+    
+    if uploaded_file is not None:
+        st.audio(uploaded_file, format='audio/mp3')
+        
+        if st.button("Clone Voice and Generate TTS"):
+            cookies = get_cookies()
+            file_url_data = run_first_endpoint(uploaded_file, cookies)
+            run_second_endpoint(uploaded_file, file_url_data)
+            third_api_response = run_third_endpoint(file_url_data['file_url'], cookies)
+            voice_id = third_api_response['1722307769083x636360784032498700']['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
+            text_input = st.text_area("Enter the text to convert to speech")
+            if text_input:
+                tts_audio = run_fourth_endpoint(voice_id, text_input)
+                st.audio(tts_audio, format='audio/mp3')
 
-        # Step 3: Start workflow
-        workflow_response = start_workflow(upload_info['file_url'])
-        voice_id = workflow_response["1722307769083x636360784032498700"]["step_results"]["cmMxi"]["return_value"]["cmMwu"]["return_value"]["data"]["_p_body.id"]
-        st.write(f"Voice ID: {voice_id}")
-
-        # Step 4: Generate TTS
-        text_input = st.text_area("Enter text to convert to speech:")
-        if st.button("Generate TTS"):
-            audio_content = generate_tts(voice_id, text_input)
-            
-            # Convert audio content to base64
-            audio_base64 = base64.b64encode(audio_content).decode()
-            
-            # Display audio player
-            st.audio(audio_content, format='audio/mp3')
-            
-            # Provide download link
-            st.markdown(f'<a href="data:audio/mp3;base64,{audio_base64}" download="generated_speech.mp3">Download MP3</a>', unsafe_allow_html=True)
-
-else:
-    st.info("Please upload an MP3 file to start.")
+if __name__ == "__main__":
+    main()
