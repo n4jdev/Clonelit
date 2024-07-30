@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+import io
 
 # Function to make the first API call
 def make_first_api_call(file_name, file_size):
@@ -180,8 +181,11 @@ def make_fourth_api_call(voice_id, text, cookies):
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     st.write("Fourth API Request Body:", json.dumps(data, indent=4))
-    st.write("Fourth API Response:", response.content)
-    return response.content
+    
+    # Save the audio content to a BytesIO object
+    audio_content = io.BytesIO(response.content)
+    
+    return audio_content
 
 # Streamlit app
 def main():
