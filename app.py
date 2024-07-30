@@ -56,6 +56,8 @@ def make_first_api_call(file_name, file_size):
         "content_type": "audio/mpeg"
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    st.write("First API Request Body:", json.dumps(data, indent=4))
+    st.write("First API Response:", response.json())
     return response.json()
 
 # Function to make the second API call
@@ -63,6 +65,7 @@ def make_second_api_call(file, fields):
     url = 'https://s3.amazonaws.com/appforest_uf'
     files = {'file': (file.name, file, 'audio/mpeg')}
     response = requests.post(url, data=fields, files=files)
+    st.write("Second API Response:", response.status_code)
     return response
 
 # Function to make the third API call
@@ -129,6 +132,8 @@ def make_third_api_call(file_url):
         "user_id": "1722303920846x322366301969347260"
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    st.write("Third API Request Body:", json.dumps(data, indent=4))
+    st.write("Third API Response:", response.json())
     return response.json()
 
 # Function to make the fourth API call
@@ -159,6 +164,8 @@ def make_fourth_api_call(voice_id, text):
         "quality": "premium"
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    st.write("Fourth API Request Body:", json.dumps(data, indent=4))
+    st.write("Fourth API Response:", response.content)
     return response.content
 
 # Streamlit app
@@ -175,18 +182,15 @@ def main():
 
         # Make the first API call
         first_api_response = make_first_api_call(file_name, file_size)
-        st.write("First API Response:", first_api_response)
 
         file_url = first_api_response['file_url']
         fields = first_api_response['fields']
 
         # Make the second API call
         second_api_response = make_second_api_call(uploaded_file, fields)
-        st.write("Second API Response:", second_api_response.status_code)
 
         # Make the third API call
         third_api_response = make_third_api_call(file_url)
-        st.write("Third API Response:", third_api_response)
 
         voice_id = third_api_response['1722307769083x636360784032498700']['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
 
