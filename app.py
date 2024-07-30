@@ -1,8 +1,6 @@
 import streamlit as st
 import requests
 import json
-import tempfile
-import os
 
 # Function to make the first API call
 def make_first_api_call(file_name, file_size):
@@ -13,6 +11,7 @@ def make_first_api_call(file_name, file_size):
         'accept-language': 'en-PH,en-US;q=0.9,en;q=0.8',
         'cache-control': 'no-cache',
         'content-type': 'application/json',
+        'cookie': 'playhttexttospeechdemo_test_u2main=bus|1722303920846x322366301969347260|1722303920867x234219269417406100; playhttexttospeechdemo_test_u2main.sig=qg3jhxENBXCklzRicwfPxg2pmbQ; playhttexttospeechdemo_u1_testmain=1722303920846x322366301969347260',
         'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
         'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
         'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
@@ -59,7 +58,7 @@ def make_first_api_call(file_name, file_size):
     response = requests.post(url, headers=headers, data=json.dumps(data))
     st.write("First API Request Body:", json.dumps(data, indent=4))
     st.write("First API Response:", response.json())
-    return response.json(), response.cookies
+    return response.json()
 
 # Function to make the second API call
 def make_second_api_call(file, fields):
@@ -70,7 +69,7 @@ def make_second_api_call(file, fields):
     return response
 
 # Function to make the third API call
-def make_third_api_call(file_url, cookies):
+def make_third_api_call(file_url):
     url = 'https://playhttexttospeechdemo.bubbleapps.io/version-test/workflow/start'
     headers = {
         'authority': 'playhttexttospeechdemo.bubbleapps.io',
@@ -78,6 +77,7 @@ def make_third_api_call(file_url, cookies):
         'accept-language': 'en-PH,en-US;q=0.9,en;q=0.8',
         'cache-control': 'no-cache',
         'content-type': 'application/json',
+        'cookie': 'playhttexttospeechdemo_test_u2main=bus|1722303920846x322366301969347260|1722303920867x234219269417406100; playhttexttospeechdemo_test_u2main.sig=qg3jhxENBXCklzRicwfPxg2pmbQ; playhttexttospeechdemo_u1_testmain=1722303920846x322366301969347260',
         'origin': 'https://playhttexttospeechdemo.bubbleapps.io',
         'referer': 'https://playhttexttospeechdemo.bubbleapps.io/',
         'sec-ch-ua': '"Not-A.Brand";v="99", "Chromium";v="124"',
@@ -131,13 +131,13 @@ def make_third_api_call(file_url, cookies):
         "timezone_string": "Asia/Manila",
         "user_id": "1722303920846x322366301969347260"
     }
-    response = requests.post(url, headers=headers, cookies=cookies, data=json.dumps(data))
+    response = requests.post(url, headers=headers, data=json.dumps(data))
     st.write("Third API Request Body:", json.dumps(data, indent=4))
     st.write("Third API Response:", response.json())
-    return response.json(), response.cookies
+    return response.json()
 
 # Function to make the fourth API call
-def make_fourth_api_call(voice_id, text, run_id, server_call_id, user_id, cookies):
+def make_fourth_api_call(voice_id, text):
     url = 'https://europe-west3-bubble-io-284016.cloudfunctions.net/get-stream'
     headers = {
         'authority': 'europe-west3-bubble-io-284016.cloudfunctions.net',
@@ -161,13 +161,11 @@ def make_fourth_api_call(voice_id, text, run_id, server_call_id, user_id, cookie
         "format": "mp3",
         "mimeCode": "audio/mpeg",
         "speed": 1,
-        "quality": "premium",
-        "run_id": run_id,
-        "server_call_id": server_call_id,
-        "user_id": user_id
+        "quality": "premium"
     }
-    response = requests.post(url, headers=headers, cookies=cookies, data=json.dumps(data))
+    response = requests.post(url, headers=headers, data=json.dumps(data))
     st.write("Fourth API Request Body:", json.dumps(data, indent=4))
+    st.write("Fourth API Response:", response.content)
     return response.content
 
 # Streamlit app
@@ -183,7 +181,7 @@ def main():
         st.write("File size:", file_size)
 
         # Make the first API call
-        first_api_response, cookies = make_first_api_call(file_name, file_size)
+        first_api_response = make_first_api_call(file_name, file_size)
 
         file_url = first_api_response['file_url']
         fields = first_api_response['fields']
@@ -191,38 +189,17 @@ def main():
         # Make the second API call
         second_api_response = make_second_api_call(uploaded_file, fields)
 
-        # Make the third API call and get cookies
-        third_api_response, cookies = make_third_api_call(file_url, cookies)
-
-        # Extract required cookie values
-        playhttexttospeechdemo_test_u2main = cookies.get('playhttexttospeechdemo_test_u2main', '')
-        playhttexttospeechdemo_u1_testmain = cookies.get('playhttexttospeechdemo_u1_testmain', '')
-
-        # Extract run_id, server_call_id, and user_id from cookies
-        cookie_parts = playhttexttospeechdemo_test_u2main.split('|')
-        run_id = cookie_parts[1] if len(cookie_parts) > 1 else ''
-        server_call_id = cookie_parts[2] if len(cookie_parts) > 2 else ''
-        user_id = playhttexttospeechdemo_u1_testmain
+        # Make the third API call
+        third_api_response = make_third_api_call(file_url)
 
         voice_id = third_api_response['1722307769083x636360784032498700']['step_results']['cmMxi']['return_value']['cmMwu']['return_value']['data']['_p_body.id']
 
         # Input text for TTS
         text = st.text_area("Enter text to convert to speech")
         if st.button("Generate TTS"):
-            # Make the fourth API call with dynamic cookies
-            with st.spinner("Generating audio..."):
-                tts_audio = make_fourth_api_call(voice_id, text, run_id, server_call_id, user_id, cookies)
-            
-            # Save the audio to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-                tmp_file.write(tts_audio)
-                tmp_file_path = tmp_file.name
-            
-            # Display the audio player
-            st.audio(tmp_file_path, format='audio/mp3')
-            
-            # Clean up the temporary file
-            os.unlink(tmp_file_path)
+            # Make the fourth API call
+            tts_audio = make_fourth_api_call(voice_id, text)
+            st.audio(tts_audio, format='audio/mpeg')
 
 if __name__ == "__main__":
     main()
