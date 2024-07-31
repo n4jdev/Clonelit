@@ -40,15 +40,7 @@ def main():
         st.markdown("---")
 
         st.header("✍️ Enter Text")
-        text_input = st.text_area("Enter text to convert to speech (or use the sample text below)", height=150)
-        
-        if st.button("Use Sample Text"):
-            text_input = SAMPLE_TEXT
-            st.session_state.text_input = text_input  # Store in session state
-        
-        # Use session state to persist the text input
-        if 'text_input' in st.session_state:
-            text_input = st.text_area("Text to convert", st.session_state.text_input, height=150)
+        text_input = st.text_area("Enter text to convert to speech", value=SAMPLE_TEXT, height=150)
         
         if st.button("🚀 Generate TTS"):
             if not text_input:
@@ -91,7 +83,7 @@ def main():
     st.markdown("""
     1. Choose a predefined voice or upload your own voice sample.
     2. Adjust the TTS settings if needed.
-    3. Enter the text you want to convert to speech or use the sample text.
+    3. Edit the text you want to convert to speech or use the provided sample text.
     4. Click 'Generate TTS' to create your audio.
     5. Play the generated audio or download it.
     """)
