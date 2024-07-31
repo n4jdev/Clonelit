@@ -7,7 +7,6 @@ from playwright.async_api import async_playwright
 
 # Install Playwright browsers
 os.system("playwright install")
-os.system("playwright install-deps")
 
 def find_s3_url(data):
     if isinstance(data, dict):
