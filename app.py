@@ -104,7 +104,7 @@ def generate_tts(text, voice, output_format="mp3", speed=1, sample_rate=44100, t
 
 st.title("TTS App with Voice Cloning")
 
-uploaded_file = st.file_uploader("Upload a voice sample (MP3)", type="mp3")
+uploaded_file = st.file_uploader("Upload a voice sample (MP3)", type=['mp3','m4a','wav'])
 text_input = st.text_area("Enter text to convert to speech")
 
 if uploaded_file and text_input:
