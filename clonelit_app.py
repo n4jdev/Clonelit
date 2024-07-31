@@ -33,6 +33,9 @@ def main():
         uploaded_file = st.file_uploader("Upload a voice sample (MP3, M4A, WAV)", type=['mp3','m4a','wav'])
 
     with col2:
+
+        st.markdown("---")
+        
         st.header("⚙️ TTS Settings")
         speed = st.slider("Speed", 0.5, 2.0, 1.0, 0.1)
         temperature = st.slider("Temperature", 0.0, 1.0, 0.4, 0.1)
