@@ -8,9 +8,9 @@ from itertools import cycle
 
 # List of authorization tokens and user IDs
 AUTH_DATA = [
-    {"token": "Bearer 418f05355cdc49d4b2f4f8fe31528e3e", "user_id": "86OEPNzxxsestqtf9k41quQAS8F3"},
-    {"token": "Bearer 2nd_token_here", "user_id": "2nd_user_id_here"},
-    {"token": "Bearer 3rd_token_here", "user_id": "3rd_user_id_here"},
+    {"token": "Bearer e4c99eb7dc6942bd85d5055f05bcb56b", "user_id": "cOkx04WHR1VmPJRCJBvBSa59kDz2"},
+    {"token": "Bearer 0cbc3b554cc144bb897952eea31dfed9", "user_id": "k22sReMUoMNZ6c6wZiqq3GNHILK2"},
+    {"token": "Bearer fc638819fc414197852cb8bbc57c53f8", "user_id": "SET8dBW3qjYeu9cUO9vM2WaIAt63"},
     # Add more token and user_id pairs as needed
 ]
 
