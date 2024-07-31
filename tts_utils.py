@@ -11,7 +11,11 @@ AUTH_DATA = [
     {"token": "Bearer e4c99eb7dc6942bd85d5055f05bcb56b", "user_id": "cOkx04WHR1VmPJRCJBvBSa59kDz2"},
     {"token": "Bearer 0cbc3b554cc144bb897952eea31dfed9", "user_id": "k22sReMUoMNZ6c6wZiqq3GNHILK2"},
     {"token": "Bearer fc638819fc414197852cb8bbc57c53f8", "user_id": "SET8dBW3qjYeu9cUO9vM2WaIAt63"},
-    # Add more token and user_id pairs as needed
+    {"token": "Bearer 5044a7541ff546cc9d893c31a5593484", "user_id": "UyssnOM498O343FGgYjhfHQbol63"),
+    {"token": "Bearer 72a5e9bd3a624ca5ba674e91ef775bbb", "user_id": "7zywrY6k1w6dAZdusprVbBj9AAn32"},
+    {"token": "Bearer dkssk", "user_id": "k22sReMUoMNZ6c6wZiqq3GNHILK2"},
+    {"token": "Bearer shhshs", "user_id": "SET8dBW3qjYeu9cUO9vM2WaIAt63"},
+    {"token": "Bearer shhshs", "user_id": "UyssnOM498O343FGgYjhfHQbol63"),
 ]
 
 # Create a cycler for the auth data
