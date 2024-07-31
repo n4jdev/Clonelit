@@ -1,4 +1,6 @@
 {
-    "Barrack Obama": "s3://voice-cloning-zero-shot/a6f17ff1-a7f0-4086-aa9d-01f24a96efa9/test-voice/manifest.json",
-    "Donald Trump": "s3://voice-cloning-zero-shot/2940f179-d581-4e29-bd5c-5a670e102860/test-voice/manifest.json",
+    "Morgan Freeman": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/morgan_freeman/manifest.json",
+    "Barack Obama": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/barack_obama/manifest.json",
+    "Emma Watson": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/emma_watson/manifest.json",
+    "Mickey Mouse": "s3://voice-cloning-zero-shot/df50ec02-6bf4-4a64-9fd6-bffb4a5ddc13/test-voice/manifest.json"
 }
