@@ -59,7 +59,7 @@ def main():
                 s3_url = PREDEFINED_VOICES[selected_voice]
 
             with st.spinner("Generating speech..."):
-                audio_content = generate_tts(text_input, s3_url, speed=speed, temperature=temperature)
+                audio_content = generate_tts(text_input, s3_url, speed=speed)
                 
                 if audio_content:
                     st.audio(audio_content, format="audio/mp3")
