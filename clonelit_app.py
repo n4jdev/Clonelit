@@ -26,9 +26,6 @@ def main():
     with col1:
         st.header("🔊 Predefined Voices")
         selected_voice = st.selectbox("Choose a predefined voice:", list(PREDEFINED_VOICES.keys()))
-        
-        st.markdown("---")
-        
         st.header("🎭 Clone Your Own Voice")
         uploaded_file = st.file_uploader("Upload a voice sample (MP3, M4A, WAV)", type=['mp3','m4a','wav'])
 
