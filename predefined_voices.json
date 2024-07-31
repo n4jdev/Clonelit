@@ -1,3 +1,4 @@
 {
     "Barrack Obama": "s3://voice-cloning-zero-shot/a6f17ff1-a7f0-4086-aa9d-01f24a96efa9/test-voice/manifest.json",
+    "Donald Trump": "s3://voice-cloning-zero-shot/2940f179-d581-4e29-bd5c-5a670e102860/test-voice/manifest.json",
 }
