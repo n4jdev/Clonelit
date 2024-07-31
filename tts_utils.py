@@ -4,6 +4,21 @@ import os
 import requests
 from playwright.async_api import async_playwright
 import streamlit as st
+from itertools import cycle
+
+# List of authorization tokens and user IDs
+AUTH_DATA = [
+    {"token": "Bearer 418f05355cdc49d4b2f4f8fe31528e3e", "user_id": "86OEPNzxxsestqtf9k41quQAS8F3"},
+    {"token": "Bearer 2nd_token_here", "user_id": "2nd_user_id_here"},
+    {"token": "Bearer 3rd_token_here", "user_id": "3rd_user_id_here"},
+    # Add more token and user_id pairs as needed
+]
+
+# Create a cycler for the auth data
+auth_data_cycler = cycle(AUTH_DATA)
+
+def get_next_auth_data():
+    return next(auth_data_cycler)
 
 def find_s3_url(data):
     if isinstance(data, dict):
@@ -62,6 +77,7 @@ async def upload_file_and_get_url(file_path, page_url, timeout=60000):
 
 def generate_tts(text, voice, output_format="mp3", speed=1, sample_rate=44100, temperature=0.4):
     url = "https://chirpy.play.ht/api/v2/tts/stream"
+    auth_data = get_next_auth_data()
     headers = {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
         "Accept": "audio/mpeg",
@@ -76,8 +92,8 @@ def generate_tts(text, voice, output_format="mp3", speed=1, sample_rate=44100, t
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
-        "x-user-id": "86OEPNzxxsestqtf9k41quQAS8F3",
-        "Authorization": "Bearer cf76f99ac8af4756ba12de568c10d075"
+        "x-user-id": auth_data["user_id"],
+        "Authorization": auth_data["token"]
     }
     payload = {
         "text": text,
