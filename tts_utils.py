@@ -4,6 +4,21 @@ import os
 import requests
 from playwright.async_api import async_playwright
 import streamlit as st
+from itertools import cycle
+
+# List of authorization tokens
+AUTH_TOKENS = [
+    "Bearer e4c99eb7dc6942bd85d5055f05bcb56b",
+    "Bearer 0cbc3b554cc144bb897952eea31dfed9",
+    "Bearer fc638819fc414197852cb8bbc57c53f8",
+    "Bearer cf76f99ac8af4756ba12de568c10d075",
+]
+
+# Create a cycler for the tokens
+token_cycler = cycle(AUTH_TOKENS)
+
+def get_next_auth_token():
+    return next(token_cycler)
 
 def find_s3_url(data):
     if isinstance(data, dict):
@@ -77,7 +92,7 @@ def generate_tts(text, voice, output_format="mp3", speed=1, sample_rate=44100, t
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
         "x-user-id": "86OEPNzxxsestqtf9k41quQAS8F3",
-        "Authorization": "Bearer 418f05355cdc49d4b2f4f8fe31528e3e"
+        "Authorization": get_next_auth_token()  # Use the next token in the rotation
     }
     payload = {
         "text": text,
