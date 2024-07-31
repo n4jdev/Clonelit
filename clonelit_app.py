@@ -10,6 +10,7 @@ PREDEFINED_VOICES = {
     "Morgan Freeman": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/morgan_freeman/manifest.json",
     "Barack Obama": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/barack_obama/manifest.json",
     "Emma Watson": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/emma_watson/manifest.json",
+    "Adolf Hitler": "s3://voice-cloning-zero-shot/bc2670b8-6828-43cd-b106-75049ea0c11c/test-voice/manifest.json",
 }
 
 # Sample text
