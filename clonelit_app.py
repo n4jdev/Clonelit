@@ -34,9 +34,6 @@ def main():
         st.header("⚙️ TTS Settings")
         speed = st.slider("Speed", 0.5, 2.0, 1.0, 0.1)
         temperature = st.slider("Temperature", 0.0, 1.0, 0.4, 0.1)
-
-        st.markdown("---")
-
         st.header("✍️ Enter Text")
         text_input = st.text_area("Enter text to convert to speech", value=SAMPLE_TEXT, height=150)
         
