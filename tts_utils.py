@@ -60,30 +60,35 @@ async def upload_file_and_get_url(file_path, page_url, timeout=60000):
         finally:
             await browser.close()
 
-def generate_tts(text, voice, output_format="mp3", speed=1, quality="premium"):
-    url = "https://europe-west3-bubble-io-284016.cloudfunctions.net/get-stream"
+def generate_tts(text, voice, output_format="mp3", speed=1, sample_rate=44100, temperature=0.4):
+    url = "https://chirpy.play.ht/api/v2/tts/stream"
     headers = {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+        "Accept": "audio/mpeg",
         "Content-Type": "application/json",
-        "authority": "europe-west3-bubble-io-284016.cloudfunctions.net",
+        "authority": "chirpy.play.ht",
         "accept-language": "en-PH,en-US;q=0.9,en;q=0.8",
-        "origin": "https://playhttexttospeechdemo.bubbleapps.io",
-        "referer": "https://playhttexttospeechdemo.bubbleapps.io/",
+        "origin": "https://play.ht",
+        "referer": "https://play.ht/",
         "sec-ch-ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
         "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-platform": '"Android"',
+        "sec-ch-ua-platform": "Android",
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
-        "sec-fetch-site": "cross-site",
-        "Authorization": "Bearer 8ccbf7cf6fdbfdaf509b29ac185d131d5928afa33b7ea216439ca60f8fc8d167fe7ac23843d74651bbabe15758bb01b0402369c8639ee3ffc1abe6adcd404b04bb70199773bbe672fe2567a05aadf7d7257b5ee00a05241057d7e08fbedbc8b59add5c15324cd7dc051f09d4e47fb1bfe255f8289adc0c078e0b454bf57d654f9736cab983340213519c694278f16239f06433c3b3500e7b0e7a663edd3c2b9e5bea159fa22ce6c3e2eba54e9c7d050f09706a72beaa9d88baafaa834a74f27823bc5306df0d3de38763480bc11252c2b11b6fa4d1f28e26aa3a1867072f21f5f3725b16482a236bc366b3bc4f1a406e740b8fb607e7326d88db61989de15753f4527f1d0443a81674423682e80b0f472f049a1de3d1169fc441cb1bc3a31909e14479c96c3eae448ad61af2"
+        "sec-fetch-site": "same-site",
+        "x-user-id": "86OEPNzxxsestqtf9k41quQAS8F3",
+        "Authorization": "Bearer 418f05355cdc49d4b2f4f8fe31528e3e"
     }
     payload = {
-        "input": text,
+        "text": text,
         "voice": voice,
-        "format": output_format,
-        "mimeCode": "audio/mpeg",
+        "output_format": output_format,
         "speed": speed,
-        "quality": quality
+        "sample_rate": sample_rate,
+        "temperature": temperature,
+        "voice_engine": "PlayHT2.0-gargamel",
+        "voice_guidance": None,
+        "text_guidance": 0.8
     }
 
     response = requests.post(url, headers=headers, json=payload)
