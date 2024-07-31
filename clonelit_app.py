@@ -16,6 +16,15 @@ SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog. This sentence contai
 def main():
     st.set_page_config(page_title="Clonelit - Advanced TTS App", layout="wide")
 
+    hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    
     st.title("🎙️ Clonelit - Advanced TTS App")
     st.markdown("Generate TTS of your favorite celebrities or clone your own voice!")
 
