@@ -28,7 +28,6 @@ def main():
         uploaded_file = st.file_uploader("Upload a voice sample (MP3, M4A, WAV)", type=['mp3','m4a','wav'])
 
     with col2:
-
         st.markdown("---")
         
         st.header("⚙️ TTS Settings")
