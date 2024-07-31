@@ -12,6 +12,9 @@ PREDEFINED_VOICES = {
     "Emma Watson": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/emma_watson/manifest.json",
 }
 
+# Sample text
+SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog. This sentence contains every letter in the English alphabet."
+
 def main():
     st.set_page_config(page_title="Clonelit - Advanced TTS App", layout="wide")
 
@@ -30,57 +33,65 @@ def main():
         uploaded_file = st.file_uploader("Upload a voice sample (MP3, M4A, WAV)", type=['mp3','m4a','wav'])
 
     with col2:
-        st.header("✍️ Enter Text")
-        text_input = st.text_area("Enter text to convert to speech", height=150)
-        
-        st.markdown("---")
-        
         st.header("⚙️ TTS Settings")
         speed = st.slider("Speed", 0.5, 2.0, 1.0, 0.1)
         temperature = st.slider("Temperature", 0.0, 1.0, 0.4, 0.1)
 
-    if st.button("🚀 Generate TTS"):
-        if not text_input:
-            st.error("Please enter some text to convert to speech.")
-            return
+        st.markdown("---")
 
-        if uploaded_file:
-            with st.spinner("Processing voice sample..."):
-                with open("temp_voice_sample.mp3", "wb") as f:
-                    f.write(uploaded_file.getvalue())
-                
-                s3_url = asyncio.run(upload_file_and_get_url("temp_voice_sample.mp3", "https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice"))
-                
-                if s3_url:
-                    st.success("Voice sample processed successfully")
-                else:
-                    st.error("Failed to process voice sample")
-                    return
-                
-                os.remove("temp_voice_sample.mp3")
-        else:
-            s3_url = PREDEFINED_VOICES[selected_voice]
+        st.header("✍️ Enter Text")
+        text_input = st.text_area("Enter text to convert to speech (or use the sample text below)", height=150)
+        
+        if st.button("Use Sample Text"):
+            text_input = SAMPLE_TEXT
+            st.session_state.text_input = text_input  # Store in session state
+        
+        # Use session state to persist the text input
+        if 'text_input' in st.session_state:
+            text_input = st.text_area("Text to convert", st.session_state.text_input, height=150)
+        
+        if st.button("🚀 Generate TTS"):
+            if not text_input:
+                st.error("Please enter some text to convert to speech.")
+                return
 
-        with st.spinner("Generating speech..."):
-            audio_content = generate_tts(text_input, s3_url, speed=speed, temperature=temperature)
-            
-            if audio_content:
-                st.audio(audio_content, format="audio/mp3")
-                st.download_button(
-                    label="Download Audio",
-                    data=audio_content,
-                    file_name="generated_speech.mp3",
-                    mime="audio/mp3"
-                )
+            if uploaded_file:
+                with st.spinner("Processing voice sample..."):
+                    with open("temp_voice_sample.mp3", "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                    
+                    s3_url = asyncio.run(upload_file_and_get_url("temp_voice_sample.mp3", "https://playhttexttospeechdemo.bubbleapps.io/version-test/cloned-voice"))
+                    
+                    if s3_url:
+                        st.success("Voice sample processed successfully")
+                    else:
+                        st.error("Failed to process voice sample")
+                        return
+                    
+                    os.remove("temp_voice_sample.mp3")
             else:
-                st.error("Failed to generate speech")
+                s3_url = PREDEFINED_VOICES[selected_voice]
+
+            with st.spinner("Generating speech..."):
+                audio_content = generate_tts(text_input, s3_url, speed=speed, temperature=temperature)
+                
+                if audio_content:
+                    st.audio(audio_content, format="audio/mp3")
+                    st.download_button(
+                        label="Download Audio",
+                        data=audio_content,
+                        file_name="generated_speech.mp3",
+                        mime="audio/mp3"
+                    )
+                else:
+                    st.error("Failed to generate speech")
 
     st.markdown("---")
     st.markdown("### 📝 How to use Clonelit")
     st.markdown("""
     1. Choose a predefined voice or upload your own voice sample.
-    2. Enter the text you want to convert to speech.
-    3. Adjust the TTS settings if needed.
+    2. Adjust the TTS settings if needed.
+    3. Enter the text you want to convert to speech or use the sample text.
     4. Click 'Generate TTS' to create your audio.
     5. Play the generated audio or download it.
     """)
