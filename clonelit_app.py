@@ -6,12 +6,8 @@ import os
 from tts_utils import upload_file_and_get_url, generate_tts
 
 # Predefined voices
-PREDEFINED_VOICES = {
-    "Morgan Freeman": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/morgan_freeman/manifest.json",
-    "Barack Obama": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/barack_obama/manifest.json",
-    "Emma Watson": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/voices/emma_watson/manifest.json",
-    "Mickey Mouse": "s3://voice-cloning-zero-shot/df50ec02-6bf4-4a64-9fd6-bffb4a5ddc13/test-voice/manifest.json",
-}
+with open('predefined_voices.json', 'r') as f:
+    PREDEFINED_VOICES = json.load(f)
 
 # Sample text
 SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog. This sentence contains every letter in the English alphabet."
